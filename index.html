@@ -2,83 +2,96 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Louis的彩虹贪吃蛇</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             font-family: Arial, sans-serif;
+            touch-action: none;
+            overflow: hidden;
         }
         
         .game-container {
             text-align: center;
             background: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 95vw;
+            width: 100%;
+            max-width: 500px;
         }
         
         h1 {
             color: #5a67d8;
-            margin: 10px 0;
-            font-size: 28px;
+            margin: 5px 0;
+            font-size: clamp(20px, 5vw, 28px);
         }
         
         canvas {
             border: 3px solid #5a67d8;
             border-radius: 10px;
             background: #f0f0f0;
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            touch-action: none;
         }
         
         .score {
-            font-size: 24px;
+            font-size: clamp(18px, 4vw, 24px);
             color: #5a67d8;
-            margin: 10px 0;
+            margin: 5px 0;
             font-weight: bold;
         }
         
         .level-info {
-            font-size: 20px;
+            font-size: clamp(16px, 3.5vw, 20px);
             color: #e53e3e;
             margin: 5px 0;
             font-weight: bold;
         }
         
         .lives-info {
-            font-size: 18px;
+            font-size: clamp(14px, 3vw, 18px);
             color: #48bb78;
             margin: 5px 0;
             font-weight: bold;
         }
         
         .skill-info {
-            font-size: 18px;
+            font-size: clamp(14px, 3vw, 18px);
             color: #48bb78;
             margin: 5px 0;
             font-weight: bold;
-            min-height: 25px;
+            min-height: 20px;
         }
         
         .controls {
-            margin-top: 20px;
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
         }
         
         button {
             background: #5a67d8;
             color: white;
             border: none;
-            padding: 12px 30px;
-            font-size: 18px;
+            padding: 10px 20px;
+            font-size: clamp(14px, 3vw, 18px);
             border-radius: 25px;
             cursor: pointer;
-            margin: 0 10px;
             transition: all 0.3s;
+            white-space: nowrap;
         }
         
         button:hover {
@@ -274,6 +287,73 @@
             text-align: center;
         }
         
+        .touch-controls {
+            display: none;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .touch-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .touch-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 80px;
+            height: 80px;
+            font-size: 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .touch-button:active {
+            background: #5a67d8;
+            transform: scale(0.95);
+        }
+        
+        .touch-button.skill {
+            background: #48bb78;
+            width: auto;
+            padding: 0 30px;
+        }
+        
+        .touch-button.skill:active {
+            background: #38a169;
+        }
+        
+        @media (max-width: 768px) {
+            .touch-controls {
+                display: grid;
+            }
+            
+            .instructions {
+                display: none;
+            }
+            
+            .game-container {
+                padding: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 90%;
+                max-width: 200px;
+            }
+        }
         .heart {
             color: #e53e3e;
             font-size: 20px;
@@ -305,6 +385,20 @@
         <button id="skillButton" class="skill-button" onclick="useSkill()" style="display: none;">
             使用远程吃技能 (空格键)
         </button>
+        
+        <div class="touch-controls" id="touchControls">
+            <div class="touch-row">
+                <button class="touch-button" ontouchstart="handleTouchControl('up')" onmousedown="handleTouchControl('up')">↑</button>
+            </div>
+            <div class="touch-row">
+                <button class="touch-button" ontouchstart="handleTouchControl('left')" onmousedown="handleTouchControl('left')">←</button>
+                <button class="touch-button skill" ontouchstart="useSkill()" onmousedown="useSkill()" id="touchSkillButton" style="display: none;">🐟</button>
+                <button class="touch-button" ontouchstart="handleTouchControl('right')" onmousedown="handleTouchControl('right')">→</button>
+            </div>
+            <div class="touch-row">
+                <button class="touch-button" ontouchstart="handleTouchControl('down')" onmousedown="handleTouchControl('down')">↓</button>
+            </div>
+        </div>
         
         <div class="instructions">
             <p>使用方向键 ↑ ↓ ← → 控制小蛇</p>
@@ -379,10 +473,104 @@
         const leaderboardModal = document.getElementById('leaderboardModal');
         const nameInputModal = document.getElementById('nameInputModal');
         const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const touchControls = document.getElementById('touchControls');
+        const touchSkillButton = document.getElementById('touchSkillButton');
         
         // 游戏设置
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
+        
+        // 触摸控制处理
+        function handleTouchControl(direction) {
+            if (!gameRunning || gamePaused) return;
+            
+            switch(direction) {
+                case 'up':
+                    if (dy === 0) {
+                        dx = 0;
+                        dy = -1;
+                    }
+                    break;
+                case 'down':
+                    if (dy === 0) {
+                        dx = 0;
+                        dy = 1;
+                    }
+                    break;
+                case 'left':
+                    if (dx === 0) {
+                        dx = -1;
+                        dy = 0;
+                    }
+                    break;
+                case 'right':
+                    if (dx === 0) {
+                        dx = 1;
+                        dy = 0;
+                    }
+                    break;
+            }
+        }
+        
+        // 触摸滑动控制
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            e.preventDefault();
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            if (!gameRunning || gamePaused) return;
+            
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                // 水平滑动
+                if (diffX > 30) {
+                    handleTouchControl('right');
+                } else if (diffX < -30) {
+                    handleTouchControl('left');
+                }
+            } else {
+                // 垂直滑动
+                if (diffY > 30) {
+                    handleTouchControl('down');
+                } else if (diffY < -30) {
+                    handleTouchControl('up');
+                }
+            }
+            
+            e.preventDefault();
+        });
+        
+        // 防止页面滚动
+        document.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // 检测是否为移动设备
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        
+        // 设置画布大小
+        function resizeCanvas() {
+            const container = document.querySelector('.game-container');
+            const maxSize = Math.min(container.clientWidth - 30, 400);
+            canvas.width = maxSize;
+            canvas.height = maxSize;
+        }
+        
+        // 调整画布大小
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
         
         let snake = [{x: 10, y: 10}];
         let foods = [];
@@ -662,31 +850,40 @@
         function updateSkillButton() {
             if (!skillUnlocked) {
                 skillButton.style.display = 'none';
+                touchSkillButton.style.display = 'none';
                 skillInfo.textContent = '';
                 return;
             }
             
             skillButton.style.display = 'block';
+            if (isMobile && gameRunning) {
+                touchSkillButton.style.display = 'flex';
+            }
             
             if (skillCooldown > 0) {
                 skillButton.disabled = true;
+                touchSkillButton.disabled = true;
                 skillButton.textContent = `技能冷却中 (${skillCooldown}秒)`;
+                touchSkillButton.textContent = `${skillCooldown}`;
                 skillInfo.textContent = `⏱️ 技能冷却: ${skillCooldown}秒`;
             } else {
                 skillButton.disabled = false;
+                touchSkillButton.disabled = false;
                 skillButton.textContent = '使用远程吃技能 (空格键)';
+                touchSkillButton.textContent = '🐟';
                 skillInfo.textContent = '🐟 远程吃技能已就绪！';
             }
         }
         
         // 生成单个食物
         function generateSingleFood() {
+            const actualTileCount = Math.floor(canvas.width / gridSize);
             let newFood;
             let attempts = 0;
             do {
                 newFood = {
-                    x: Math.floor(Math.random() * tileCount),
-                    y: Math.floor(Math.random() * tileCount),
+                    x: Math.floor(Math.random() * actualTileCount),
+                    y: Math.floor(Math.random() * actualTileCount),
                     emoji: foodEmojis[Math.floor(Math.random() * foodEmojis.length)]
                 };
                 attempts++;
@@ -734,13 +931,15 @@
         
         // 绘制游戏
         function draw() {
+            const actualTileCount = canvas.width / gridSize;
+            
             ctx.fillStyle = '#f0f0f0';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // 绘制网格
             ctx.strokeStyle = '#e0e0e0';
             ctx.lineWidth = 1;
-            for (let i = 0; i <= tileCount; i++) {
+            for (let i = 0; i <= actualTileCount; i++) {
                 ctx.beginPath();
                 ctx.moveTo(i * gridSize, 0);
                 ctx.lineTo(i * gridSize, canvas.height);
@@ -792,10 +991,11 @@
             
             if (dx === 0 && dy === 0) return;
             
+            const actualTileCount = Math.floor(canvas.width / gridSize);
             const head = {x: snake[0].x + dx, y: snake[0].y + dy};
             
             // 检查墙壁碰撞
-            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+            if (head.x < 0 || head.x >= actualTileCount || head.y < 0 || head.y >= actualTileCount) {
                 handleDeath();
                 return;
             }
@@ -846,10 +1046,12 @@
                 lives--;
                 updateLivesDisplay();
                 playMissSound();
-                showMessage("还有一次机会！", 10, 10);
+                showMessage("还有一次机会！", Math.floor(canvas.width / gridSize / 2), Math.floor(canvas.height / gridSize / 2));
                 
                 // 重置蛇的位置
-                snake = [{x: 10, y: 10}];
+                const startX = Math.floor(canvas.width / gridSize / 2);
+                const startY = Math.floor(canvas.height / gridSize / 2);
+                snake = [{x: startX, y: startY}];
                 dx = 0;
                 dy = 0;
                 draw();
@@ -1149,7 +1351,10 @@
                 clearInterval(gameInterval);
             }
             
-            snake = [{x: 10, y: 10}];
+            const startX = Math.floor(canvas.width / gridSize / 2);
+            const startY = Math.floor(canvas.height / gridSize / 2);
+            
+            snake = [{x: startX, y: startY}];
             dx = 0;
             dy = 0;
             score = 0;
@@ -1158,6 +1363,11 @@
             initializeFoods();
             gameRunning = true;
             gamePaused = false;
+            
+            // 显示或隐藏触摸控制
+            if (isMobile) {
+                touchControls.style.display = 'grid';
+            }
             
             updateSkillButton();
             
