@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Louis的彩虹贪吃蛇</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+        }
+        
+        .game-container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #5a67d8;
+            margin: 10px 0;
+            font-size: 28px;
+        }
+        
+        canvas {
+            border: 3px solid #5a67d8;
+            border-radius: 10px;
+            background: #f0f0f0;
+        }
+        
+        .score {
+            font-size: 24px;
+            color: #5a67d8;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .level-info {
+            font-size: 20px;
+            color: #e53e3e;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        
+        .lives-info {
+            font-size: 18px;
+            color: #48bb78;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        
+        .skill-info {
+            font-size: 18px;
+            color: #48bb78;
+            margin: 5px 0;
+            font-weight: bold;
+            min-height: 25px;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        button {
+            background: #5a67d8;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .skill-button {
+            background: #48bb78;
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        .skill-button:hover {
+            background: #38a169;
+        }
+        
+        .skill-button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            color: #5a67d8;
+            font-size: 16px;
+        }
+        
+        .game-over, .level-select, .leaderboard-modal, .name-input-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            z-index: 1000;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .game-over h2 {
+            color: #e53e3e;
+            margin-bottom: 10px;
+        }
+        
+        .level-select h2, .leaderboard-modal h2 {
+            color: #5a67d8;
+            margin-bottom: 20px;
+        }
+        
+        .level-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .level-button {
+            background: #48bb78;
+            padding: 15px 40px;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+        
+        .level-button:hover {
+            background: #38a169;
+            transform: scale(1.1);
+        }
+        
+        .level-button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        .food-effect {
+            position: absolute;
+            font-size: 30px;
+            animation: foodPop 0.5s ease-out;
+            pointer-events: none;
+        }
+        
+        .message-popup {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: #e53e3e;
+            animation: messageFade 2s ease-out;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        @keyframes foodPop {
+            0% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2) translateY(-30px);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes messageFade {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            20% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            80% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+        }
+        
+        .projectile {
+            position: absolute;
+            font-size: 20px;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .leaderboard-table {
+            margin: 20px 0;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .leaderboard-table th {
+            background: #5a67d8;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .leaderboard-table tr:nth-child(even) {
+            background: #f7fafc;
+        }
+        
+        .leaderboard-table tr:first-child td {
+            background: #ffd700;
+            font-weight: bold;
+        }
+        
+        .leaderboard-table tr:nth-child(2) td {
+            background: #c0c0c0;
+            font-weight: bold;
+        }
+        
+        .leaderboard-table tr:nth-child(3) td {
+            background: #cd7f32;
+            font-weight: bold;
+        }
+        
+        .name-input {
+            margin: 20px 0;
+        }
+        
+        .name-input input {
+            padding: 10px 20px;
+            font-size: 18px;
+            border: 2px solid #5a67d8;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
+        }
+        
+        .heart {
+            color: #e53e3e;
+            font-size: 20px;
+            display: inline-block;
+            animation: heartBeat 1s infinite;
+        }
+        
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🌈 Louis的彩虹贪吃蛇 🐍</h1>
+        <div class="level-info">第 <span id="currentLevel">1</span> 关</div>
+        <div class="score">得分: <span id="score">0</span> 分</div>
+        <div class="lives-info" id="livesInfo"></div>
+        <div class="skill-info" id="skillInfo"></div>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        
+        <div class="controls">
+            <button onclick="showLevelSelect()">开始游戏</button>
+            <button onclick="pauseGame()">暂停</button>
+            <button onclick="showLeaderboard()">排行榜</button>
+        </div>
+        
+        <button id="skillButton" class="skill-button" onclick="useSkill()" style="display: none;">
+            使用远程吃技能 (空格键)
+        </button>
+        
+        <div class="instructions">
+            <p>使用方向键 ↑ ↓ ← → 控制小蛇</p>
+            <p id="skillInstruction" style="display: none;">按空格键使用远程吃技能！</p>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="level-select" id="levelSelect">
+        <h2>🎮 选择关卡 🎮</h2>
+        <div class="level-buttons">
+            <button class="level-button" onclick="startLevel(1)">第1关 - 慢慢爬 🐢</button>
+            <button class="level-button" id="level2Button" onclick="startLevel(2)">第2关 - 正常速度 🐍</button>
+            <button class="level-button" id="level3Button" onclick="startLevel(3)">第3关 - 快快跑 🚀</button>
+            <button class="level-button" id="level4Button" onclick="startLevel(4)">第4关 - 超级快 ⚡ (+1命)</button>
+            <button class="level-button" id="level5Button" onclick="startLevel(5)">第5关 - 闪电侠 ⚡⚡</button>
+            <button class="level-button" id="level6Button" onclick="startLevel(6)">第6关 - 光速 💫</button>
+            <button class="level-button" id="level7Button" onclick="startLevel(7)">第7关 - 终极挑战 🔥</button>
+        </div>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <h2>游戏结束！</h2>
+        <p>最终得分: <span id="finalScore">0</span> 分</p>
+        <p>总分: <span id="totalScore">0</span> 分</p>
+        <button onclick="checkHighScore()">提交分数</button>
+        <button onclick="showLevelSelect()">选择关卡</button>
+        <button onclick="restartGame()">再玩一次</button>
+    </div>
+    
+    <div class="name-input-modal" id="nameInputModal">
+        <h2>🏆 恭喜！你进入了前10名！ 🏆</h2>
+        <p>你的总分: <span id="highScoreDisplay">0</span> 分</p>
+        <div class="name-input">
+            <input type="text" id="playerName" placeholder="输入你的名字" maxlength="10">
+        </div>
+        <button onclick="submitHighScore()">提交</button>
+        <button onclick="cancelSubmit()">取消</button>
+    </div>
+    
+    <div class="leaderboard-modal" id="leaderboardModal">
+        <h2>🏆 排行榜 TOP 10 🏆</h2>
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>排名</th>
+                    <th>玩家</th>
+                    <th>总分</th>
+                    <th>日期</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+        </table>
+        <button onclick="closeLeaderboard()">关闭</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('currentLevel');
+        const gameOverDiv = document.getElementById('gameOver');
+        const levelSelectDiv = document.getElementById('levelSelect');
+        const overlay = document.getElementById('overlay');
+        const finalScoreElement = document.getElementById('finalScore');
+        const totalScoreElement = document.getElementById('totalScore');
+        const skillButton = document.getElementById('skillButton');
+        const skillInfo = document.getElementById('skillInfo');
+        const skillInstruction = document.getElementById('skillInstruction');
+        const livesInfo = document.getElementById('livesInfo');
+        const leaderboardModal = document.getElementById('leaderboardModal');
+        const nameInputModal = document.getElementById('nameInputModal');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        
+        // 游戏设置
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+        
+        let snake = [{x: 10, y: 10}];
+        let foods = [];
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let totalGameScore = 0;
+        let gameRunning = false;
+        let gamePaused = false;
+        let currentLevel = 1;
+        let gameSpeed = 150;
+        let gameInterval = null;
+        let completedLevels = [];
+        let skillUnlocked = false;
+        let skillCooldown = 0;
+        let skillCooldownInterval = null;
+        let lives = 1;
+        let maxLives = 1;
+        
+        // 创建音频上下文
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 播放欢乐的吃食物音效
+        function playEatSound() {
+            // 创建超级欢乐的叮当声
+            const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C4到C6
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = index % 2 === 0 ? 'sine' : 'triangle';
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                    
+                    // 加入一点颤音效果
+                    const vibrato = audioContext.createOscillator();
+                    vibrato.frequency.value = 5;
+                    const vibratoGain = audioContext.createGain();
+                    vibratoGain.gain.value = 10;
+                    vibrato.connect(vibratoGain);
+                    vibratoGain.connect(oscillator.frequency);
+                    vibrato.start();
+                    
+                    gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                    vibrato.stop(audioContext.currentTime + 0.3);
+                }, index * 40);
+            });
+        }
+        
+        // 播放失败音效
+        function playMissSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+        
+        // 播放技能音效
+        function playSkillSound() {
+            // 发射音效
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+        
+        // 播放升级音效
+        function playLevelUpSound() {
+            const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                }, index * 100);
+            });
+        }
+        
+        // 播放游戏结束音效
+        function playGameOverSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.5);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+        
+        // 播放额外生命音效
+        function playExtraLifeSound() {
+            const notes = [523.25, 587.33, 659.25, 783.99]; // C5, D5, E5, G5
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.4);
+                }, index * 100);
+            });
+        }
+        
+        // 彩虹颜色数组
+        const rainbowColors = [
+            '#FF0000', '#FF7F00', '#FFFF00', '#00FF00', 
+            '#0000FF', '#4B0082', '#9400D3'
+        ];
+        
+        // 食物表情
+        const foodEmojis = ['🍎', '🍓', '🍊', '🍋', '🍇', '🍉', '🍒', '🍌', '🥝', '🍑'];
+        
+        // 显示消息
+        function showMessage(message, x, y) {
+            const msg = document.createElement('div');
+            msg.className = 'message-popup';
+            msg.textContent = message;
+            msg.style.left = (canvas.offsetLeft + x * gridSize) + 'px';
+            msg.style.top = (canvas.offsetTop + y * gridSize - 40) + 'px';
+            document.body.appendChild(msg);
+            
+            setTimeout(() => {
+                msg.remove();
+            }, 2000);
+        }
+        
+        // 更新生命显示
+        function updateLivesDisplay() {
+            if (currentLevel >= 4) {
+                const hearts = '<span class="heart">❤️</span>'.repeat(lives);
+                livesInfo.innerHTML = `生命: ${hearts}`;
+                livesInfo.style.display = 'block';
+            } else {
+                livesInfo.style.display = 'none';
+            }
+        }
+        
+        // 使用技能
+        function useSkill() {
+            if (!gameRunning || gamePaused || skillCooldown > 0 || !skillUnlocked) return;
+            
+            const head = snake[0];
+            let targetFood = null;
+            let minDistance = Infinity;
+            
+            // 找到最近的食物（不限制同一行）
+            foods.forEach(food => {
+                const distance = Math.abs(food.x - head.x) + Math.abs(food.y - head.y);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    targetFood = food;
+                }
+            });
+            
+            if (targetFood) {
+                // 播放技能音效
+                playSkillSound();
+                
+                // 创建发射的小鱼
+                const projectile = document.createElement('div');
+                projectile.className = 'projectile';
+                projectile.textContent = '🐟';
+                projectile.style.left = (canvas.offsetLeft + head.x * gridSize) + 'px';
+                projectile.style.top = (canvas.offsetTop + head.y * gridSize) + 'px';
+                document.body.appendChild(projectile);
+                
+                // 移动小鱼到目标（曲线路径）
+                setTimeout(() => {
+                    projectile.style.transition = 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    projectile.style.left = (canvas.offsetLeft + targetFood.x * gridSize) + 'px';
+                    projectile.style.top = (canvas.offsetTop + targetFood.y * gridSize) + 'px';
+                }, 50);
+                
+                // 吃掉食物
+                setTimeout(() => {
+                    projectile.remove();
+                    
+                    // 移除食物并加分
+                    const foodIndex = foods.indexOf(targetFood);
+                    if (foodIndex !== -1) {
+                        foods.splice(foodIndex, 1);
+                        score += 10;
+                        scoreElement.textContent = score;
+                        playEatSound();
+                        createFoodEffect(targetFood.x, targetFood.y, targetFood.emoji);
+                        generateSingleFood();
+                        
+                        // 蛇也要变长
+                        snake.push({...snake[snake.length - 1]});
+                    }
+                }, 550);
+                
+                // 开始冷却
+                skillCooldown = 30;
+                updateSkillButton();
+                
+                if (skillCooldownInterval) {
+                    clearInterval(skillCooldownInterval);
+                }
+                
+                skillCooldownInterval = setInterval(() => {
+                    skillCooldown--;
+                    updateSkillButton();
+                    if (skillCooldown <= 0) {
+                        clearInterval(skillCooldownInterval);
+                        skillCooldownInterval = null;
+                    }
+                }, 1000);
+            } else {
+                // 没有同行的食物
+                playMissSound();
+                showMessage("下次再努力！", head.x, head.y);
+            }
+        }
+        
+        // 更新技能按钮
+        function updateSkillButton() {
+            if (!skillUnlocked) {
+                skillButton.style.display = 'none';
+                skillInfo.textContent = '';
+                return;
+            }
+            
+            skillButton.style.display = 'block';
+            
+            if (skillCooldown > 0) {
+                skillButton.disabled = true;
+                skillButton.textContent = `技能冷却中 (${skillCooldown}秒)`;
+                skillInfo.textContent = `⏱️ 技能冷却: ${skillCooldown}秒`;
+            } else {
+                skillButton.disabled = false;
+                skillButton.textContent = '使用远程吃技能 (空格键)';
+                skillInfo.textContent = '🐟 远程吃技能已就绪！';
+            }
+        }
+        
+        // 生成单个食物
+        function generateSingleFood() {
+            let newFood;
+            let attempts = 0;
+            do {
+                newFood = {
+                    x: Math.floor(Math.random() * tileCount),
+                    y: Math.floor(Math.random() * tileCount),
+                    emoji: foodEmojis[Math.floor(Math.random() * foodEmojis.length)]
+                };
+                attempts++;
+                let valid = true;
+                for (let segment of snake) {
+                    if (segment.x === newFood.x && segment.y === newFood.y) {
+                        valid = false;
+                        break;
+                    }
+                }
+                for (let food of foods) {
+                    if (food.x === newFood.x && food.y === newFood.y) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) {
+                    foods.push(newFood);
+                    return;
+                }
+            } while (attempts < 100);
+        }
+        
+        // 初始化食物
+        function initializeFoods() {
+            foods = [];
+            for (let i = 0; i < 3; i++) {
+                generateSingleFood();
+            }
+        }
+        
+        // 创建食物动画效果
+        function createFoodEffect(x, y, emoji) {
+            const effect = document.createElement('div');
+            effect.className = 'food-effect';
+            effect.textContent = emoji;
+            effect.style.left = (canvas.offsetLeft + x * gridSize) + 'px';
+            effect.style.top = (canvas.offsetTop + y * gridSize - 20) + 'px';
+            document.body.appendChild(effect);
+            
+            setTimeout(() => {
+                effect.remove();
+            }, 500);
+        }
+        
+        // 绘制游戏
+        function draw() {
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制网格
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= tileCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize, 0);
+                ctx.lineTo(i * gridSize, canvas.height);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSize);
+                ctx.lineTo(canvas.width, i * gridSize);
+                ctx.stroke();
+            }
+            
+            // 绘制蛇
+            snake.forEach((segment, index) => {
+                const colorIndex = index % rainbowColors.length;
+                ctx.fillStyle = rainbowColors[colorIndex];
+                ctx.fillRect(segment.x * gridSize + 2, segment.y * gridSize + 2, 
+                           gridSize - 4, gridSize - 4);
+                
+                // 绘制蛇头
+                if (index === 0) {
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(segment.x * gridSize + 6, segment.y * gridSize + 6, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(segment.x * gridSize + 14, segment.y * gridSize + 6, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = 'black';
+                    ctx.beginPath();
+                    ctx.arc(segment.x * gridSize + 6, segment.y * gridSize + 6, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(segment.x * gridSize + 14, segment.y * gridSize + 6, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // 绘制食物
+            foods.forEach(food => {
+                ctx.font = `${gridSize - 4}px Arial`;
+                ctx.fillText(food.emoji, food.x * gridSize + 2, food.y * gridSize + gridSize - 4);
+            });
+        }
+        
+        // 更新游戏状态
+        function update() {
+            if (!gameRunning || gamePaused) return;
+            
+            if (dx === 0 && dy === 0) return;
+            
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            
+            // 检查墙壁碰撞
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                handleDeath();
+                return;
+            }
+            
+            // 检查自身碰撞
+            for (let segment of snake) {
+                if (head.x === segment.x && head.y === segment.y) {
+                    handleDeath();
+                    return;
+                }
+            }
+            
+            snake.unshift(head);
+            
+            // 检查是否吃到食物
+            let ateFood = false;
+            for (let i = 0; i < foods.length; i++) {
+                if (head.x === foods[i].x && head.y === foods[i].y) {
+                    score += 10;
+                    scoreElement.textContent = score;
+                    
+                    playEatSound();
+                    createFoodEffect(foods[i].x, foods[i].y, foods[i].emoji);
+                    
+                    foods.splice(i, 1);
+                    generateSingleFood();
+                    
+                    ateFood = true;
+                    break;
+                }
+            }
+            
+            if (!ateFood) {
+                snake.pop();
+            }
+            
+            // 检查是否通关
+            if (score >= currentLevel * 30) {
+                levelComplete();
+            }
+            
+            draw();
+        }
+        
+        // 处理死亡
+        function handleDeath() {
+            if (lives > 1) {
+                lives--;
+                updateLivesDisplay();
+                playMissSound();
+                showMessage("还有一次机会！", 10, 10);
+                
+                // 重置蛇的位置
+                snake = [{x: 10, y: 10}];
+                dx = 0;
+                dy = 0;
+                draw();
+            } else {
+                gameOver();
+            }
+        }
+        
+        // 关卡完成
+        function levelComplete() {
+            gameRunning = false;
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            
+            // 累加总分
+            totalGameScore += score;
+            
+            if (!completedLevels.includes(currentLevel)) {
+                completedLevels.push(currentLevel);
+                localStorage.setItem('completedLevels', JSON.stringify(completedLevels));
+            }
+            
+            // 第一关完成解锁技能
+            if (currentLevel === 1 && !skillUnlocked) {
+                skillUnlocked = true;
+                localStorage.setItem('skillUnlocked', 'true');
+                alert('恭喜！你解锁了远程吃技能！按空格键使用！');
+            }
+            
+            playLevelUpSound();
+            
+            if (currentLevel === 7) {
+                alert(`恭喜通过所有关卡！总分: ${totalGameScore}`);
+                finalScoreElement.textContent = score;
+                totalScoreElement.textContent = totalGameScore;
+                overlay.style.display = 'block';
+                gameOverDiv.style.display = 'block';
+            } else {
+                alert(`恭喜通过第${currentLevel}关！`);
+                showLevelSelect();
+            }
+        }
+        
+        // 游戏结束
+        function gameOver() {
+            gameRunning = false;
+            playGameOverSound();
+            
+            // 累加总分
+            totalGameScore += score;
+            
+            finalScoreElement.textContent = score;
+            totalScoreElement.textContent = totalGameScore;
+            overlay.style.display = 'block';
+            gameOverDiv.style.display = 'block';
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            if (skillCooldownInterval) {
+                clearInterval(skillCooldownInterval);
+                skillCooldownInterval = null;
+            }
+        }
+        
+        // 检查是否进入排行榜
+        function checkHighScore() {
+            const leaderboard = getLeaderboard();
+            
+            if (leaderboard.length < 10 || totalGameScore > leaderboard[9].score) {
+                highScoreDisplay.textContent = totalGameScore;
+                overlay.style.display = 'block';
+                gameOverDiv.style.display = 'none';
+                nameInputModal.style.display = 'block';
+            } else {
+                showLeaderboard();
+            }
+        }
+        
+        // 提交高分
+        function submitHighScore() {
+            const playerName = document.getElementById('playerName').value.trim();
+            
+            if (!playerName) {
+                alert('请输入你的名字！');
+                return;
+            }
+            
+            const leaderboard = getLeaderboard();
+            const date = new Date().toLocaleDateString('zh-CN');
+            
+            leaderboard.push({
+                name: playerName,
+                score: totalGameScore,
+                date: date
+            });
+            
+            // 排序并保留前10名
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard.splice(10);
+            
+            localStorage.setItem('snakeLeaderboard', JSON.stringify(leaderboard));
+            
+            nameInputModal.style.display = 'none';
+            showLeaderboard();
+        }
+        
+        // 取消提交
+        function cancelSubmit() {
+            nameInputModal.style.display = 'none';
+            showLevelSelect();
+        }
+        
+        // 获取排行榜
+        function getLeaderboard() {
+            const saved = localStorage.getItem('snakeLeaderboard');
+            return saved ? JSON.parse(saved) : [];
+        }
+        
+        // 显示排行榜
+        function showLeaderboard() {
+            const leaderboard = getLeaderboard();
+            const tbody = document.getElementById('leaderboardBody');
+            
+            tbody.innerHTML = '';
+            
+            leaderboard.forEach((entry, index) => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = index + 1;
+                row.insertCell(1).textContent = entry.name;
+                row.insertCell(2).textContent = entry.score + ' 分';
+                row.insertCell(3).textContent = entry.date;
+            });
+            
+            if (leaderboard.length === 0) {
+                const row = tbody.insertRow();
+                const cell = row.insertCell(0);
+                cell.colSpan = 4;
+                cell.textContent = '暂无记录';
+                cell.style.textAlign = 'center';
+            }
+            
+            overlay.style.display = 'block';
+            leaderboardModal.style.display = 'block';
+            gameOverDiv.style.display = 'none';
+            nameInputModal.style.display = 'none';
+        }
+        
+        // 关闭排行榜
+        function closeLeaderboard() {
+            leaderboardModal.style.display = 'none';
+            overlay.style.display = 'none';
+        }
+        
+        // 显示关卡选择
+        function showLevelSelect() {
+            overlay.style.display = 'block';
+            levelSelectDiv.style.display = 'block';
+            gameOverDiv.style.display = 'none';
+            totalGameScore = 0; // 重置总分
+            
+            updateLevelButtons();
+        }
+        
+        // 更新关卡按钮
+        function updateLevelButtons() {
+            // 更新解锁状态
+            for (let i = 2; i <= 7; i++) {
+                const button = document.getElementById(`level${i}Button`);
+                if (completedLevels.includes(i - 1)) {
+                    button.disabled = false;
+                } else {
+                    button.disabled = true;
+                    button.textContent = `第${i}关 - 需要通过第${i-1}关`;
+                }
+            }
+            
+            // 恢复按钮文本
+            if (!document.getElementById('level2Button').disabled) {
+                document.getElementById('level2Button').textContent = '第2关 - 正常速度 🐍';
+            }
+            if (!document.getElementById('level3Button').disabled) {
+                document.getElementById('level3Button').textContent = '第3关 - 快快跑 🚀';
+            }
+            if (!document.getElementById('level4Button').disabled) {
+                document.getElementById('level4Button').textContent = '第4关 - 超级快 ⚡ (+1命)';
+            }
+            if (!document.getElementById('level5Button').disabled) {
+                document.getElementById('level5Button').textContent = '第5关 - 闪电侠 ⚡⚡';
+            }
+            if (!document.getElementById('level6Button').disabled) {
+                document.getElementById('level6Button').textContent = '第6关 - 光速 💫';
+            }
+            if (!document.getElementById('level7Button').disabled) {
+                document.getElementById('level7Button').textContent = '第7关 - 终极挑战 🔥';
+            }
+        }
+        
+        // 开始特定关卡
+        function startLevel(level) {
+            currentLevel = level;
+            levelElement.textContent = level;
+            
+            // 根据关卡设置速度和生命
+            switch(level) {
+                case 1:
+                    gameSpeed = 200;
+                    maxLives = 1;
+                    break;
+                case 2:
+                    gameSpeed = 150;
+                    maxLives = 1;
+                    break;
+                case 3:
+                    gameSpeed = 120;
+                    maxLives = 1;
+                    break;
+                case 4:
+                    gameSpeed = 100;
+                    maxLives = 2; // 额外一条命
+                    break;
+                case 5:
+                    gameSpeed = 80;
+                    maxLives = 2;
+                    break;
+                case 6:
+                    gameSpeed = 70;
+                    maxLives = 2;
+                    break;
+                case 7:
+                    gameSpeed = 60;
+                    maxLives = 2;
+                    break;
+            }
+            
+            lives = maxLives;
+            updateLivesDisplay();
+            
+            overlay.style.display = 'none';
+            levelSelectDiv.style.display = 'none';
+            
+            // 更新技能显示
+            if (skillUnlocked) {
+                skillInstruction.style.display = 'block';
+            }
+            
+            if (level === 4 && maxLives === 2) {
+                playExtraLifeSound();
+                showMessage("获得额外生命！", 10, 10);
+            }
+            
+            playLevelUpSound();
+            startGame();
+        }
+        
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning || gamePaused) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (dy === 0) {
+                        dx = 0;
+                        dy = -1;
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (dy === 0) {
+                        dx = 0;
+                        dy = 1;
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (dx === 0) {
+                        dx = -1;
+                        dy = 0;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (dx === 0) {
+                        dx = 1;
+                        dy = 0;
+                    }
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    useSkill();
+                    break;
+            }
+        });
+        
+        // 开始游戏
+        function startGame() {
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            
+            snake = [{x: 10, y: 10}];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            scoreElement.textContent = score;
+            skillCooldown = 0;
+            initializeFoods();
+            gameRunning = true;
+            gamePaused = false;
+            
+            updateSkillButton();
+            
+            gameInterval = setInterval(update, gameSpeed);
+            
+            draw();
+        }
+        
+        // 暂停游戏
+        function pauseGame() {
+            if (gameRunning) {
+                gamePaused = !gamePaused;
+            }
+        }
+        
+        // 重新开始
+        function restartGame() {
+            overlay.style.display = 'none';
+            gameOverDiv.style.display = 'none';
+            totalGameScore = 0;
+            startLevel(currentLevel);
+        }
+        
+        // 加载保存的进度
+        function loadProgress() {
+            const saved = localStorage.getItem('completedLevels');
+            if (saved) {
+                completedLevels = JSON.parse(saved);
+            }
+            
+            const skillSaved = localStorage.getItem('skillUnlocked');
+            if (skillSaved === 'true') {
+                skillUnlocked = true;
+            }
+        }
+        
+        // 初始化
+        loadProgress();
+        initializeFoods();
+        draw();
+    </script>
+</body>
+</html>
