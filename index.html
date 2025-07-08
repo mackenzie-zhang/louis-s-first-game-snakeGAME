@@ -1120,46 +1120,61 @@
         }
         
         // 检查是否进入排行榜
-        function checkHighScore() {
-            const leaderboard = getLeaderboard();
-            
-            if (leaderboard.length < 10 || totalGameScore > leaderboard[9].score) {
-                highScoreDisplay.textContent = totalGameScore;
-                overlay.style.display = 'block';
-                gameOverDiv.style.display = 'none';
-                nameInputModal.style.display = 'block';
-            } else {
-                showLeaderboard();
-            }
-        }
-        
+async function checkHighScore() {
+    // 同样，必须用 await 等待
+    const leaderboard = await getLeaderboard();
+    
+    if (leaderboard.length < 10 || totalGameScore > (leaderboard[9]?.score || 0) ) {
+        highScoreDisplay.textContent = totalGameScore;
+        overlay.style.display = 'block';
+        gameOverDiv.style.display = 'none';
+        nameInputModal.style.display = 'block';
+    } else {
+        // showLeaderboard 已经改成了异步的，所以这里调用它没问题
+        showLeaderboard();
+    }
+}
+
         // 提交高分
-        function submitHighScore() {
-            const playerName = document.getElementById('playerName').value.trim();
-            
-            if (!playerName) {
-                alert('请输入你的名字！');
-                return;
-            }
-            
-            const leaderboard = getLeaderboard();
-            const date = new Date().toLocaleDateString('zh-CN');
-            
-            leaderboard.push({
-                name: playerName,
-                score: totalGameScore,
-                date: date
-            });
-            
-            // 排序并保留前10名
-            leaderboard.sort((a, b) => b.score - a.score);
-            leaderboard.splice(10);
-            
-            localStorage.setItem('snakeLeaderboard', JSON.stringify(leaderboard));
-            
-            nameInputModal.style.display = 'none';
-            showLeaderboard();
+async function submitHighScore() {
+    const playerName = document.getElementById('playerName').value.trim();
+    if (!playerName) {
+        alert('请输入你的名字！');
+        return;
+    }
+    
+    try {
+        const leaderboard = await getLeaderboard(); 
+        const date = new Date().toLocaleDateString('zh-CN');
+        leaderboard.push({
+            name: playerName,
+            score: totalGameScore,
+            date: date
+        });
+        
+        leaderboard.sort((a, b) => b.score - a.score);
+        leaderboard.splice(10);
+        
+        // 【核心】将数据提交给我们写的第二个API文件
+        const response = await fetch('/api/setLeaderboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(leaderboard),
+        });
+
+        if (!response.ok) {
+            throw new Error('提交分数到服务器失败');
         }
+
+        nameInputModal.style.display = 'none';
+        // 成功提交后，显示新的排行榜
+        showLeaderboard();
+
+    } catch (error) {
+        alert('网络错误，提交分数失败。请稍后再试。');
+        console.error("提交高分时出错:", error);
+    }
+}
         
         // 取消提交
         function cancelSubmit() {
@@ -1168,39 +1183,51 @@
         }
         
         // 获取排行榜
-        function getLeaderboard() {
-            const saved = localStorage.getItem('snakeLeaderboard');
-            return saved ? JSON.parse(saved) : [];
+        async function getLeaderboard() {
+    try {
+        // 去请求我们刚刚写的第一个API文件
+        const response = await fetch('/api/getLeaderboard');
+        if (!response.ok) {
+            console.error("Failed to fetch leaderboard from server.");
+            return []; // 如果失败，返回空数组
         }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error fetching leaderboard:", error);
+        return [];
+    }
         
         // 显示排行榜
-        function showLeaderboard() {
-            const leaderboard = getLeaderboard();
-            const tbody = document.getElementById('leaderboardBody');
-            
-            tbody.innerHTML = '';
-            
-            leaderboard.forEach((entry, index) => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = index + 1;
-                row.insertCell(1).textContent = entry.name;
-                row.insertCell(2).textContent = entry.score + ' 分';
-                row.insertCell(3).textContent = entry.date;
-            });
-            
-            if (leaderboard.length === 0) {
-                const row = tbody.insertRow();
-                const cell = row.insertCell(0);
-                cell.colSpan = 4;
-                cell.textContent = '暂无记录';
-                cell.style.textAlign = 'center';
-            }
-            
-            overlay.style.display = 'block';
-            leaderboardModal.style.display = 'block';
-            gameOverDiv.style.display = 'none';
-            nameInputModal.style.display = 'none';
-        }
+async function showLeaderboard() {
+    // 这里必须用 await 等待 getLeaderboard 从网上拿到数据
+    const leaderboard = await getLeaderboard();
+    // ... (后续代码完全一样，无需改动)
+    const tbody = document.getElementById('leaderboardBody');
+    
+    tbody.innerHTML = '';
+    
+    leaderboard.forEach((entry, index) => {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = index + 1;
+        row.insertCell(1).textContent = entry.name;
+        row.insertCell(2).textContent = entry.score + ' 分';
+        row.insertCell(3).textContent = entry.date;
+    });
+    
+    if (leaderboard.length === 0) {
+        const row = tbody.insertRow();
+        const cell = row.insertCell(0);
+        cell.colSpan = 4;
+        cell.textContent = '正在加载或暂无记录...';
+        cell.style.textAlign = 'center';
+    }
+    
+    overlay.style.display = 'block';
+    leaderboardModal.style.display = 'block';
+    gameOverDiv.style.display = 'none';
+    nameInputModal.style.display = 'none';
+}
         
         // 关闭排行榜
         function closeLeaderboard() {
