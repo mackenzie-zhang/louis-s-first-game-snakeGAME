@@ -101,6 +101,7 @@
             width: 90%;
             height: 90%;
             object-fit: contain;
+            pointer-events: none;
         }
         
         .gem:hover {
@@ -277,7 +278,7 @@
 <body>
     <div class="game-container">
         <h1>🎀 Louis的LABUBU家族消消乐 🎀</h1>
-        <p style="color: #666; margin-top: -10px; font-size: 14px;">POPMART正版授权系列</p>
+        <p style="color: #666; margin-top: -10px; font-size: 14px;">Labubu爱好者自玩款 - 来自8岁的Louis</p>
         
         <div class="game-info">
             <div class="info-item">
@@ -301,7 +302,7 @@
         </div>
         
         <div style="margin-top: 15px; color: #666; font-size: 13px; line-height: 1.8; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 10px;">
-            <p><strong>🎁 POPMART LABUBU限量系列：</strong></p>
+            <p><strong>🎁 LABUBU系列：</strong></p>
             <p style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
                 <span style="background: #FF69B4; color: white; padding: 2px 8px; border-radius: 10px;">THE MONSTERS</span>
                 <span style="background: #FF0000; color: white; padding: 2px 8px; border-radius: 10px;">Coca-Cola联名</span>
@@ -327,14 +328,6 @@
         <h2>🎁 我的LABUBU收藏</h2>
         <div id="collectionList"></div>
         <button onclick="closeCollection()">关闭</button>
-    </div>
-    
-    <div class="overlay" id="overlay"></div>
-    <div class="game-over" id="gameOver">
-        <h2 id="gameOverTitle">游戏结束！</h2>
-        <p>最终得分: <span id="finalScore">0</span></p>
-        <p id="gameOverMessage"></p>
-        <button onclick="newGame()">再玩一次</button>
     </div>
 
     <script>
@@ -511,8 +504,16 @@
         function handleGemClick(e) {
             if (isProcessing) return;
             
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
+            // 获取被点击的gem元素（可能是gem本身或其子元素）
+            let targetGem = e.target;
+            while (targetGem && !targetGem.classList.contains('gem')) {
+                targetGem = targetGem.parentElement;
+            }
+            
+            if (!targetGem) return;
+            
+            const row = parseInt(targetGem.dataset.row);
+            const col = parseInt(targetGem.dataset.col);
             
             selectGem(row, col);
         }
@@ -522,8 +523,16 @@
             e.preventDefault();
             if (isProcessing) return;
             
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
+            // 获取被触摸的gem元素
+            let targetGem = e.target;
+            while (targetGem && !targetGem.classList.contains('gem')) {
+                targetGem = targetGem.parentElement;
+            }
+            
+            if (!targetGem) return;
+            
+            const row = parseInt(targetGem.dataset.row);
+            const col = parseInt(targetGem.dataset.col);
             
             selectGem(row, col);
         }
@@ -603,7 +612,15 @@
         // 更新宝石显示
         function updateGemDisplay(row, col) {
             const gem = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-            gem.textContent = board[row][col];
+            const img = gem.querySelector('img');
+            img.src = board[row][col];
+            
+            // 更新边框颜色
+            const gemIndex = GEM_TYPES.indexOf(board[row][col]);
+            if (gemIndex !== -1) {
+                gem.style.borderColor = LABUBU_COLORS[gemIndex];
+                gem.style.background = `${LABUBU_COLORS[gemIndex]}20`;
+            }
         }
         
         // 查找匹配
@@ -800,7 +817,7 @@
                 
                 // 更新按钮文本
                 const shuffleBtn = document.querySelector('.special-button');
-                shuffleBtn.textContent = `重新排列 (${shufflesLeft}次)`;
+                shuffleBtn.textContent = `魔法洗牌 (${shufflesLeft}次)`;
                 
                 if (shufflesLeft === 0) {
                     shuffleBtn.disabled = true;
@@ -1010,17 +1027,20 @@
             combo = 0;
             selectedGem = null;
             isProcessing = false;
+            collectedLabubu.clear();
             
             scoreElement.textContent = score;
             movesElement.textContent = moves;
             levelElement.textContent = level;
             
             const shuffleBtn = document.querySelector('.special-button');
-            shuffleBtn.textContent = '重新排列 (3次)';
+            shuffleBtn.textContent = '魔法洗牌 (3次)';
             shuffleBtn.disabled = false;
             
             overlay.style.display = 'none';
             gameOverDiv.style.display = 'none';
+            const collectionModal = document.getElementById('collectionModal');
+            collectionModal.style.display = 'none';
             
             initBoard();
         }
