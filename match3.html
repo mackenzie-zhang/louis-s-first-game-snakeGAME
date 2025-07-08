@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Louis的彩虹消消乐</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 50%, #FFE4E1 100%);
+            font-family: Arial, sans-serif;
+            touch-action: none;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 95vw;
+        }
+        
+        h1 {
+            color: #5a67d8;
+            margin: 10px 0;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .info-item {
+            background: #f7fafc;
+            padding: 10px 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .score {
+            font-size: 24px;
+            color: #5a67d8;
+            font-weight: bold;
+        }
+        
+        .moves {
+            font-size: 24px;
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        
+        .level {
+            font-size: 24px;
+            color: #48bb78;
+            font-weight: bold;
+        }
+        
+        #gameBoard {
+            display: inline-grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            gap: 5px;
+            background: #e2e8f0;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            touch-action: none;
+        }
+        
+        .gem {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+            border: 3px solid #fff;
+            overflow: hidden;
+        }
+        
+        .gem img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+        }
+        
+        .gem:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .gem.selected {
+            animation: pulse 0.5s infinite;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .gem.matched {
+            animation: disappear 0.5s ease-out;
+        }
+        
+        @keyframes disappear {
+            0% { 
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            25% {
+                transform: scale(1.3) rotate(90deg);
+            }
+            50% {
+                transform: scale(1.5) rotate(180deg);
+            }
+            75% {
+                transform: scale(1.2) rotate(270deg);
+            }
+            100% { 
+                transform: scale(0) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .labubu-eyes {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        
+        .gem.falling {
+            animation: fall 0.5s ease-in;
+        }
+        
+        @keyframes fall {
+            0% { transform: translateY(-100px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #5a67d8;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .special-button {
+            background: #48bb78;
+        }
+        
+        .special-button:hover {
+            background: #38a169;
+        }
+        
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            z-index: 1000;
+        }
+        
+        .game-over h2 {
+            color: #5a67d8;
+            margin-bottom: 20px;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        .combo-popup {
+            position: absolute;
+            font-size: 30px;
+            font-weight: bold;
+            color: #ff6b6b;
+            animation: comboAnim 1s ease-out;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        @keyframes comboAnim {
+            0% {
+                transform: scale(0.5) translateY(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.5) translateY(-20px);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) translateY(-50px);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #gameBoard {
+                grid-template-columns: repeat(8, 40px);
+                grid-template-rows: repeat(8, 40px);
+                gap: 3px;
+                padding: 5px;
+            }
+            
+            .gem {
+                width: 40px;
+                height: 40px;
+                font-size: 25px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .score, .moves, .level {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎀 Louis的LABUBU家族消消乐 🎀</h1>
+        <p style="color: #666; margin-top: -10px; font-size: 14px;">POPMART正版授权系列</p>
+        
+        <div class="game-info">
+            <div class="info-item">
+                <div class="level">第 <span id="level">1</span> 关</div>
+            </div>
+            <div class="info-item">
+                <div class="score">得分: <span id="score">0</span></div>
+            </div>
+            <div class="info-item">
+                <div class="moves">步数: <span id="moves">30</span></div>
+            </div>
+        </div>
+        
+        <div id="gameBoard"></div>
+        
+        <div class="controls">
+            <button onclick="newGame()">新游戏</button>
+            <button class="special-button" onclick="shuffleBoard()">魔法洗牌 (3次)</button>
+            <button onclick="showHint()">LABUBU提示</button>
+            <button onclick="showCollection()">我的收藏</button>
+        </div>
+        
+        <div style="margin-top: 15px; color: #666; font-size: 13px; line-height: 1.8; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 10px;">
+            <p><strong>🎁 POPMART LABUBU限量系列：</strong></p>
+            <p style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                <span style="background: #FF69B4; color: white; padding: 2px 8px; border-radius: 10px;">THE MONSTERS</span>
+                <span style="background: #FF0000; color: white; padding: 2px 8px; border-radius: 10px;">Coca-Cola联名</span>
+                <span style="background: #87CEEB; color: white; padding: 2px 8px; border-radius: 10px;">Lazy Yoga</span>
+                <span style="background: #FFD700; color: #333; padding: 2px 8px; border-radius: 10px;">SpongeBob</span>
+                <span style="background: #98FB98; color: #333; padding: 2px 8px; border-radius: 10px;">Fall In Wild</span>
+                <span style="background: #DDA0DD; color: white; padding: 2px 8px; border-radius: 10px;">Wings of Fortune</span>
+                <span style="background: #C0C0C0; color: #333; padding: 2px 8px; border-radius: 10px;">Almost Hidden</span>
+            </p>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="game-over" id="gameOver">
+        <h2 id="gameOverTitle">游戏结束！</h2>
+        <p>最终得分: <span id="finalScore">0</span></p>
+        <p id="gameOverMessage"></p>
+        <p>收集到 <span id="collectedCount">0</span> 款LABUBU！</p>
+        <button onclick="newGame()">再玩一次</button>
+    </div>
+    
+    <div class="game-over" id="collectionModal" style="display: none;">
+        <h2>🎁 我的LABUBU收藏</h2>
+        <div id="collectionList"></div>
+        <button onclick="closeCollection()">关闭</button>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="game-over" id="gameOver">
+        <h2 id="gameOverTitle">游戏结束！</h2>
+        <p>最终得分: <span id="finalScore">0</span></p>
+        <p id="gameOverMessage"></p>
+        <button onclick="newGame()">再玩一次</button>
+    </div>
+
+    <script>
+        const BOARD_SIZE = 8;
+        // 使用图片路径代替emoji
+        const GEM_TYPES = [
+            'images/labubu1.png',
+            'images/labubu2.png', 
+            'images/labubu3.png',
+            'images/labubu4.png',
+            'images/labubu5.png',
+            'images/labubu6.png',
+            'images/labubu7.png'
+        ];
+        const LABUBU_NAMES = [
+            'THE MONSTERS 经典款',
+            '野生探险款', 
+            '万圣节款',
+            '冬日款',
+            '国王款',
+            '紫色款',
+            '薄荷绿款'
+        ];
+        const LABUBU_COLORS = ['#FF69B4', '#8B4513', '#FF8C00', '#87CEEB', '#FFD700', '#9370DB', '#98FB98'];
+        let board = [];
+        let score = 0;
+        let moves = 30;
+        let level = 1;
+        let selectedGem = null;
+        let isProcessing = false;
+        let shufflesLeft = 3;
+        let combo = 0;
+        let collectedLabubu = new Set();
+        
+        const gameBoard = document.getElementById('gameBoard');
+        const scoreElement = document.getElementById('score');
+        const movesElement = document.getElementById('moves');
+        const levelElement = document.getElementById('level');
+        const gameOverDiv = document.getElementById('gameOver');
+        const overlay = document.getElementById('overlay');
+        
+        // 创建音频上下文
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 播放匹配音效
+        function playMatchSound() {
+            const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                    
+                    // 加入LABUBU的可爱颤音
+                    const vibrato = audioContext.createOscillator();
+                    vibrato.frequency.value = 6;
+                    const vibratoGain = audioContext.createGain();
+                    vibratoGain.gain.value = 15;
+                    vibrato.connect(vibratoGain);
+                    vibratoGain.connect(oscillator.frequency);
+                    vibrato.start();
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                    vibrato.stop(audioContext.currentTime + 0.2);
+                }, index * 100);
+            });
+        }
+        
+        // 播放选择音效
+        function playSelectSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+        
+        // 播放连击音效
+        function playComboSound(comboLevel) {
+            const baseFreq = 440 * (1 + comboLevel * 0.2);
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 2, audioContext.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+        
+        // 初始化游戏板
+        function initBoard() {
+            board = [];
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                board[row] = [];
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    board[row][col] = getRandomGem();
+                }
+            }
+            
+            // 确保开始时没有匹配
+            while (hasMatches()) {
+                shuffleBoardInternal();
+            }
+            
+            renderBoard();
+        }
+        
+        // 获取随机宝石
+        function getRandomGem() {
+            return GEM_TYPES[Math.floor(Math.random() * GEM_TYPES.length)];
+        }
+        
+        // 渲染游戏板
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    const gem = document.createElement('div');
+                    gem.className = 'gem';
+                    
+                    // 创建图片元素
+                    const img = document.createElement('img');
+                    img.src = board[row][col];
+                    img.alt = 'LABUBU';
+                    gem.appendChild(img);
+                    
+                    gem.dataset.row = row;
+                    gem.dataset.col = col;
+                    
+                    // 根据LABUBU类型设置边框颜色
+                    const gemIndex = GEM_TYPES.indexOf(board[row][col]);
+                    if (gemIndex !== -1) {
+                        gem.style.borderColor = LABUBU_COLORS[gemIndex];
+                        gem.style.background = `${LABUBU_COLORS[gemIndex]}20`;
+                    }
+                    
+                    gem.addEventListener('click', handleGemClick);
+                    gem.addEventListener('touchstart', handleGemTouch);
+                    
+                    gameBoard.appendChild(gem);
+                }
+            }
+        }
+        
+        // 处理宝石点击
+        function handleGemClick(e) {
+            if (isProcessing) return;
+            
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+            
+            selectGem(row, col);
+        }
+        
+        // 处理触摸事件
+        function handleGemTouch(e) {
+            e.preventDefault();
+            if (isProcessing) return;
+            
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+            
+            selectGem(row, col);
+        }
+        
+        // 选择宝石
+        function selectGem(row, col) {
+            const gemElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            
+            if (!selectedGem) {
+                selectedGem = { row, col, element: gemElement };
+                gemElement.classList.add('selected');
+                playSelectSound();
+            } else {
+                // 检查是否相邻
+                const rowDiff = Math.abs(selectedGem.row - row);
+                const colDiff = Math.abs(selectedGem.col - col);
+                
+                if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+                    // 相邻，交换
+                    swapGems(selectedGem.row, selectedGem.col, row, col);
+                } else {
+                    // 不相邻，重新选择
+                    selectedGem.element.classList.remove('selected');
+                    selectedGem = { row, col, element: gemElement };
+                    gemElement.classList.add('selected');
+                    playSelectSound();
+                }
+            }
+        }
+        
+        // 交换宝石
+        async function swapGems(row1, col1, row2, col2) {
+            isProcessing = true;
+            
+            // 交换数组中的值
+            const temp = board[row1][col1];
+            board[row1][col1] = board[row2][col2];
+            board[row2][col2] = temp;
+            
+            // 更新显示
+            updateGemDisplay(row1, col1);
+            updateGemDisplay(row2, col2);
+            
+            // 清除选择
+            if (selectedGem) {
+                selectedGem.element.classList.remove('selected');
+                selectedGem = null;
+            }
+            
+            // 检查是否有匹配
+            const matches = findMatches();
+            
+            if (matches.length > 0) {
+                // 有匹配，处理匹配
+                moves--;
+                movesElement.textContent = moves;
+                combo = 0;
+                await processMatches();
+            } else {
+                // 没有匹配，交换回来
+                await new Promise(resolve => setTimeout(resolve, 300));
+                const temp = board[row1][col1];
+                board[row1][col1] = board[row2][col2];
+                board[row2][col2] = temp;
+                updateGemDisplay(row1, col1);
+                updateGemDisplay(row2, col2);
+            }
+            
+            isProcessing = false;
+            
+            // 检查游戏结束
+            if (moves <= 0) {
+                gameOver();
+            }
+        }
+        
+        // 更新宝石显示
+        function updateGemDisplay(row, col) {
+            const gem = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            gem.textContent = board[row][col];
+        }
+        
+        // 查找匹配
+        function findMatches() {
+            const matches = [];
+            
+            // 检查水平匹配
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE - 2; col++) {
+                    if (board[row][col] === board[row][col + 1] && 
+                        board[row][col] === board[row][col + 2]) {
+                        let matchLength = 3;
+                        while (col + matchLength < BOARD_SIZE && 
+                               board[row][col] === board[row][col + matchLength]) {
+                            matchLength++;
+                        }
+                        
+                        for (let i = col; i < col + matchLength; i++) {
+                            matches.push({ row, col: i });
+                        }
+                    }
+                }
+            }
+            
+            // 检查垂直匹配
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                for (let row = 0; row < BOARD_SIZE - 2; row++) {
+                    if (board[row][col] === board[row + 1][col] && 
+                        board[row][col] === board[row + 2][col]) {
+                        let matchLength = 3;
+                        while (row + matchLength < BOARD_SIZE && 
+                               board[row][col] === board[row + matchLength][col]) {
+                            matchLength++;
+                        }
+                        
+                        for (let i = row; i < row + matchLength; i++) {
+                            if (!matches.some(m => m.row === i && m.col === col)) {
+                                matches.push({ row: i, col });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return matches;
+        }
+        
+        // 处理匹配
+        async function processMatches() {
+            let matches = findMatches();
+            
+            while (matches.length > 0) {
+                combo++;
+                
+                // 记录收集到的LABUBU
+                matches.forEach(match => {
+                    const gemType = board[match.row][match.col];
+                    const gemIndex = GEM_TYPES.indexOf(gemType);
+                    if (gemIndex !== -1) {
+                        collectedLabubu.add(gemIndex);
+                    }
+                });
+                
+                // 播放音效
+                playMatchSound();
+                if (combo > 1) {
+                    playComboSound(combo);
+                    showCombo(combo);
+                }
+                
+                // 标记匹配的宝石
+                matches.forEach(match => {
+                    const gem = document.querySelector(`[data-row="${match.row}"][data-col="${match.col}"]`);
+                    gem.classList.add('matched');
+                });
+                
+                // 计算分数
+                const baseScore = matches.length * 10;
+                const comboBonus = combo > 1 ? (combo - 1) * 50 : 0;
+                score += baseScore + comboBonus;
+                scoreElement.textContent = score;
+                
+                // 等待动画
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 移除匹配的宝石
+                matches.forEach(match => {
+                    board[match.row][match.col] = null;
+                });
+                
+                // 下落
+                await dropGems();
+                
+                // 填充新宝石
+                fillBoard();
+                
+                // 渲染
+                renderBoard();
+                
+                // 查找新的匹配
+                matches = findMatches();
+            }
+            
+            // 检查是否升级
+            checkLevelUp();
+            
+            // 检查是否还有可能的移动
+            if (!hasPossibleMoves()) {
+                shuffleBoardInternal();
+                renderBoard();
+            }
+        }
+        
+        // 宝石下落
+        async function dropGems() {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                let emptyRow = BOARD_SIZE - 1;
+                
+                for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+                    if (board[row][col] !== null) {
+                        if (row !== emptyRow) {
+                            board[emptyRow][col] = board[row][col];
+                            board[row][col] = null;
+                        }
+                        emptyRow--;
+                    }
+                }
+            }
+        }
+        
+        // 填充空位
+        function fillBoard() {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    if (board[row][col] === null) {
+                        board[row][col] = getRandomGem();
+                        const gem = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                        if (gem) {
+                            gem.classList.add('falling');
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 检查是否有匹配
+        function hasMatches() {
+            return findMatches().length > 0;
+        }
+        
+        // 检查是否有可能的移动
+        function hasPossibleMoves() {
+            // 检查所有可能的交换
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    // 检查右边交换
+                    if (col < BOARD_SIZE - 1) {
+                        swap(row, col, row, col + 1);
+                        if (hasMatches()) {
+                            swap(row, col, row, col + 1); // 换回来
+                            return true;
+                        }
+                        swap(row, col, row, col + 1); // 换回来
+                    }
+                    
+                    // 检查下面交换
+                    if (row < BOARD_SIZE - 1) {
+                        swap(row, col, row + 1, col);
+                        if (hasMatches()) {
+                            swap(row, col, row + 1, col); // 换回来
+                            return true;
+                        }
+                        swap(row, col, row + 1, col); // 换回来
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        // 交换（内部使用）
+        function swap(row1, col1, row2, col2) {
+            const temp = board[row1][col1];
+            board[row1][col1] = board[row2][col2];
+            board[row2][col2] = temp;
+        }
+        
+        // 重新排列
+        function shuffleBoard() {
+            if (shufflesLeft > 0 && !isProcessing) {
+                shufflesLeft--;
+                shuffleBoardInternal();
+                renderBoard();
+                
+                // 更新按钮文本
+                const shuffleBtn = document.querySelector('.special-button');
+                shuffleBtn.textContent = `重新排列 (${shufflesLeft}次)`;
+                
+                if (shufflesLeft === 0) {
+                    shuffleBtn.disabled = true;
+                }
+            }
+        }
+        
+        // 内部重新排列
+        function shuffleBoardInternal() {
+            // 收集所有宝石
+            const gems = [];
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    gems.push(board[row][col]);
+                }
+            }
+            
+            // 打乱
+            for (let i = gems.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gems[i], gems[j]] = [gems[j], gems[i]];
+            }
+            
+            // 放回
+            let index = 0;
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    board[row][col] = gems[index++];
+                }
+            }
+        }
+        
+        // 显示提示
+        function showHint() {
+            if (isProcessing) return;
+            
+            // 找到一个可能的移动
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    // 检查右边交换
+                    if (col < BOARD_SIZE - 1) {
+                        swap(row, col, row, col + 1);
+                        if (hasMatches()) {
+                            swap(row, col, row, col + 1); // 换回来
+                            
+                            // 高亮这两个宝石
+                            const gem1 = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                            const gem2 = document.querySelector(`[data-row="${row}"][data-col="${col + 1}"]`);
+                            
+                            gem1.classList.add('selected');
+                            gem2.classList.add('selected');
+                            
+                            setTimeout(() => {
+                                gem1.classList.remove('selected');
+                                gem2.classList.remove('selected');
+                            }, 1000);
+                            
+                            return;
+                        }
+                        swap(row, col, row, col + 1); // 换回来
+                    }
+                    
+                    // 检查下面交换
+                    if (row < BOARD_SIZE - 1) {
+                        swap(row, col, row + 1, col);
+                        if (hasMatches()) {
+                            swap(row, col, row + 1, col); // 换回来
+                            
+                            // 高亮这两个宝石
+                            const gem1 = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                            const gem2 = document.querySelector(`[data-row="${row + 1}"][data-col="${col}"]`);
+                            
+                            gem1.classList.add('selected');
+                            gem2.classList.add('selected');
+                            
+                            setTimeout(() => {
+                                gem1.classList.remove('selected');
+                                gem2.classList.remove('selected');
+                            }, 1000);
+                            
+                            return;
+                        }
+                        swap(row, col, row + 1, col); // 换回来
+                    }
+                }
+            }
+        }
+        
+        // 显示连击
+        function showCombo(comboLevel) {
+            const popup = document.createElement('div');
+            popup.className = 'combo-popup';
+            
+            if (typeof comboLevel === 'number') {
+                const labubuMessages = [
+                    '太棒了！布布们在跳舞！',
+                    'LABUBU家族为你欢呼！',
+                    '哇！布布连击！',
+                    '神奇的布布魔法！',
+                    '布布们好开心！'
+                ];
+                const randomMessage = labubuMessages[Math.floor(Math.random() * labubuMessages.length)];
+                popup.textContent = `${comboLevel}连击！${randomMessage}`;
+            } else {
+                popup.textContent = comboLevel;
+            }
+            
+            popup.style.left = '50%';
+            popup.style.top = '50%';
+            popup.style.transform = 'translate(-50%, -50%)';
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.remove();
+            }, 1500);
+        }
+        
+        // 检查升级
+        function checkLevelUp() {
+            const targetScore = level * 500;
+            if (score >= targetScore) {
+                level++;
+                levelElement.textContent = level;
+                moves += 10; // 奖励10步
+                movesElement.textContent = moves;
+                
+                showCombo(`第${level}关！`);
+            }
+        }
+        
+        // 显示收藏
+        function showCollection() {
+            const collectionModal = document.getElementById('collectionModal');
+            const collectionList = document.getElementById('collectionList');
+            
+            collectionList.innerHTML = '';
+            
+            LABUBU_NAMES.forEach((name, index) => {
+                const item = document.createElement('div');
+                item.style.cssText = 'padding: 10px; margin: 5px; border-radius: 10px; display: flex; align-items: center; gap: 10px;';
+                
+                if (collectedLabubu.has(index)) {
+                    item.style.background = LABUBU_COLORS[index] + '30';
+                    item.innerHTML = `
+                        <img src="${GEM_TYPES[index]}" style="width: 40px; height: 40px; object-fit: contain;">
+                        <span style="color: ${LABUBU_COLORS[index]}; font-weight: bold;">✓ ${name}</span>
+                    `;
+                } else {
+                    item.style.background = '#f0f0f0';
+                    item.innerHTML = `
+                        <span style="font-size: 24px;">❓</span>
+                        <span style="color: #999;">未收集</span>
+                    `;
+                }
+                
+                collectionList.appendChild(item);
+            });
+            
+            const progress = document.createElement('p');
+            progress.style.cssText = 'text-align: center; margin-top: 20px; font-weight: bold; color: #666;';
+            progress.textContent = `收集进度：${collectedLabubu.size}/7`;
+            collectionList.appendChild(progress);
+            
+            overlay.style.display = 'block';
+            collectionModal.style.display = 'block';
+        }
+        
+        // 关闭收藏
+        function closeCollection() {
+            const collectionModal = document.getElementById('collectionModal');
+            overlay.style.display = 'none';
+            collectionModal.style.display = 'none';
+        }
+        
+        // 游戏结束
+        function gameOver() {
+            const finalScoreElement = document.getElementById('finalScore');
+            const gameOverTitle = document.getElementById('gameOverTitle');
+            const gameOverMessage = document.getElementById('gameOverMessage');
+            const collectedCountElement = document.getElementById('collectedCount');
+            
+            finalScoreElement.textContent = score;
+            collectedCountElement.textContent = collectedLabubu.size;
+            
+            if (score >= 1000) {
+                gameOverTitle.textContent = '太棒了！';
+                gameOverMessage.textContent = '你是LABUBU收藏大师！';
+            } else if (score >= 500) {
+                gameOverTitle.textContent = '做得不错！';
+                gameOverMessage.textContent = '继续收集更多LABUBU吧！';
+            } else {
+                gameOverTitle.textContent = '游戏结束';
+                gameOverMessage.textContent = 'LABUBU们在等你再来玩！';
+            }
+            
+            overlay.style.display = 'block';
+            gameOverDiv.style.display = 'block';
+        }
+        
+        // 新游戏
+        function newGame() {
+            score = 0;
+            moves = 30;
+            level = 1;
+            shufflesLeft = 3;
+            combo = 0;
+            selectedGem = null;
+            isProcessing = false;
+            
+            scoreElement.textContent = score;
+            movesElement.textContent = moves;
+            levelElement.textContent = level;
+            
+            const shuffleBtn = document.querySelector('.special-button');
+            shuffleBtn.textContent = '重新排列 (3次)';
+            shuffleBtn.disabled = false;
+            
+            overlay.style.display = 'none';
+            gameOverDiv.style.display = 'none';
+            
+            initBoard();
+        }
+        
+        // 初始化游戏
+        initBoard();
+    </script>
+</body>
+</html>
