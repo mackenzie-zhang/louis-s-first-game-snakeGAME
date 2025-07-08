@@ -1198,22 +1198,6 @@ async function submitHighScore() {
         return [];
     }
         
-        // 显示排行榜
-async function showLeaderboard() {
-    // 这里必须用 await 等待 getLeaderboard 从网上拿到数据
-    const leaderboard = await getLeaderboard();
-    // ... (后续代码完全一样，无需改动)
-    const tbody = document.getElementById('leaderboardBody');
-    
-    tbody.innerHTML = '';
-    
-    leaderboard.forEach((entry, index) => {
-        const row = tbody.insertRow();
-        row.insertCell(0).textContent = index + 1;
-        row.insertCell(1).textContent = entry.name;
-        row.insertCell(2).textContent = entry.score + ' 分';
-        row.insertCell(3).textContent = entry.date;
-    });
     
     if (leaderboard.length === 0) {
         const row = tbody.insertRow();
