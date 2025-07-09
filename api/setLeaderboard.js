@@ -6,7 +6,7 @@ export default async function handler(request) {
   // --- 开始硬编码调试区 ---
   // 请将下面的 "https://..." 和 "your-long-secret..." 替换为您自己的真实值
   const MY_URL = "https://mighty-poodle-14311.upstash.io";
-  const MY_TOKEN = "ATfnAAIjcDE5Mz...（这里换成您自己的完整Token）";
+  const MY_TOKEN = "ATfnAAIjcDE5MzA1OGRmNjc1YmU0MmQ1OGNhMDBiYjkzYzUxNGFkN3AxMA";
   // --- 结束硬编码调试区 ---
 
   // 确保只处理 POST 请求
