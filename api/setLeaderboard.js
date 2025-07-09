@@ -3,36 +3,46 @@ export const config = {
 };
 
 export default async function handler(request) {
-  console.log("API日志：setLeaderboard API 被调用");
+  // 确保只处理 POST 请求
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
+  // 从环境变量中获取 URL 和 Token
   const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
-  
+
+  // 增加一个检查，如果环境变量不存在，直接报错
+  if (!UPSTASH_REDIS_REST_URL || !UPSTASH_REDIS_REST_TOKEN) {
+    return new Response(JSON.stringify({ error: 'Environment variables are not configured correctly.' }), { status: 500 });
+  }
+
   try {
+    // 解析前端发来的数据
     const newLeaderboard = await request.json();
-    console.log("API日志：成功解析到前端发来的新排行榜数据:", newLeaderboard);
-    
-    console.log("API日志：正在向 Upstash 发送数据...");
+
+    // 向 Upstash 发送数据
     const response = await fetch(`${UPSTASH_REDIS_REST_URL}/set/leaderboard`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}`,
+        'Authorization': `Bearer ${UPSTASH_REDIS_REST_TOKEN}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(newLeaderboard),
     });
 
+    // 检查 Upstash 的响应
     if (!response.ok) {
-        throw new Error('向 Upstash 保存数据失败');
+        // 如果 Upstash 返回错误，将错误信息也返回给前端
+        const errorBody = await response.text();
+        throw new Error(`Failed to save to Upstash: ${errorBody}`);
     }
 
-    console.log("API日志：成功保存到 Upstash，准备返回 200 OK");
+    // 如果一切顺利，返回成功
     return new Response('OK', { status: 200 });
 
   } catch (error) {
-    console.error("API日志：在 setLeaderboard API 中发生致命错误:", error);
-    return new Response(JSON.stringify({ error: 'Failed to update leaderboard' }), {
+    console.error("API Error in setLeaderboard:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500,
     });
